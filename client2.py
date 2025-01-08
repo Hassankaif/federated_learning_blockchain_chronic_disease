@@ -5,6 +5,9 @@ import sys
 import seaborn as sns
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
 # Auxiliary methods
 def getDist(y):
@@ -55,8 +58,9 @@ class FlowerClient(fl.client.NumPyClient):
         return loss, len(x_test), {"accuracy": accuracy}
 
 if __name__ == "__main__":
+    # Correct way to start the Flower client
     fl.client.start_client(
         server_address="localhost:" + str(sys.argv[1]),
-        client=FlowerClient().to_client(),
+        client=FlowerClient().to_client(),  # Convert to Flower Client
         grpc_max_message_length=1024 * 1024 * 1024
     )
