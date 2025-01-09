@@ -65,56 +65,6 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
         
         return 0, {}
 
-def save_results_to_file(strategy):
-    if not strategy.metrics_dict['train_loss']:
-        print("No metrics to save. Training might not have completed.")
-        return
-    
-    with open("final_results.txt", "w") as f:
-        f.write("Federated Learning Results\n")
-        f.write("==========================\n\n")
-        
-        for round_idx in range(len(strategy.metrics_dict['train_loss'])):
-            f.write(f"Round {round_idx + 1}:\n")
-            f.write(f"  Training Loss: {strategy.metrics_dict['train_loss'][round_idx]:.4f}\n")
-            f.write(f"  Training Accuracy: {strategy.metrics_dict['train_accuracy'][round_idx]:.4f}\n")
-            f.write(f"  Validation Loss: {strategy.metrics_dict['val_loss'][round_idx]:.4f}\n")
-            f.write(f"  Validation Accuracy: {strategy.metrics_dict['val_accuracy'][round_idx]:.4f}\n")
-            f.write("\n")
-    print("Results saved to 'final_results.txt'.")
-
-def plot_results(strategy):
-    rounds = range(1, len(strategy.metrics_dict['train_loss']) + 1)
-    
-    if not rounds:
-        print("No metrics to plot. Training might not have completed.")
-        return
-
-    plt.figure(figsize=(12, 8))
-    
-    # Plot Loss
-    plt.subplot(2, 1, 1)
-    plt.plot(rounds, strategy.metrics_dict['train_loss'], 'ro-', label='Training Loss')
-    plt.plot(rounds, strategy.metrics_dict['val_loss'], 'bo-', label='Validation Loss')
-    plt.xlabel('Round')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss per Round')
-    plt.grid(True)
-    plt.legend()
-    
-    # Plot Accuracy
-    plt.subplot(2, 1, 2)
-    plt.plot(rounds, strategy.metrics_dict['train_accuracy'], 'ro-', label='Training Accuracy')
-    plt.plot(rounds, strategy.metrics_dict['val_accuracy'], 'bo-', label='Validation Accuracy')
-    plt.xlabel('Round')
-    plt.ylabel('Accuracy')
-    plt.title('Training and Validation Accuracy per Round')
-    plt.grid(True)
-    plt.legend()
-    
-    plt.tight_layout()
-    plt.savefig('training_metrics.png')
-    print("Plots saved as 'training_metrics.png'.")
 
 if __name__ == "__main__":
     # Instantiate the SaveModelStrategy
@@ -123,11 +73,9 @@ if __name__ == "__main__":
     # Start the Flower server
     fl.server.start_server(
         server_address="localhost:" + str(sys.argv[1]),
-        config=fl.server.ServerConfig(num_rounds=3),
+        config=fl.server.ServerConfig(num_rounds=4),
         grpc_max_message_length=1024 * 1024 * 1024,
         strategy=strategy
     )
     
-    # Save results to file and plot metrics
-    save_results_to_file(strategy)
-    plot_results(strategy)
+
