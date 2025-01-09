@@ -7,6 +7,7 @@ import sys
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
 
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
@@ -57,20 +58,61 @@ model = build_model(x_train.shape[1])
 
 # Define Flower client
 class FlowerClient(fl.client.NumPyClient):
+    def __init__(self):
+        self.train_accuracy = []
+        self.val_accuracy = []
+        self.train_loss = []
+        self.val_loss = []
+
     def get_parameters(self, config):
         return model.get_weights()
 
     def fit(self, parameters, config):
         model.set_weights(parameters)
         history = model.fit(x_train, y_train, epochs=1, validation_data=(x_test, y_test), verbose=0)
-        print("Fit history:", history.history)
+        self.train_accuracy.append(history.history['accuracy'][0])
+        self.val_accuracy.append(history.history['val_accuracy'][0])
+        self.train_loss.append(history.history['loss'][0])
+        self.val_loss.append(history.history['val_loss'][0])
+
+        # Log metrics to a text file
+        with open("metrics_log.txt", "a") as log_file:
+            log_file.write(f"Train Accuracy: {history.history['accuracy'][0]} | "
+                           f"Val Accuracy: {history.history['val_accuracy'][0]} | "
+                           f"Train Loss: {history.history['loss'][0]} | "
+                           f"Val Loss: {history.history['val_loss'][0]}\n")
+
         return model.get_weights(), len(x_train), {}
 
     def evaluate(self, parameters, config):
         model.set_weights(parameters)
         loss, accuracy = model.evaluate(x_test, y_test, verbose=0)
-        print("Eval accuracy:", accuracy)
+        print(f"Eval accuracy: {accuracy}")
         return loss, len(x_test), {"accuracy": accuracy}
+
+    def plot_metrics(self):
+        # Plotting training and validation accuracy and loss
+        epochs = range(1, len(self.train_accuracy) + 1)
+
+        # Accuracy Plot
+        plt.figure(figsize=(12, 6))
+        plt.subplot(1, 2, 1)
+        plt.plot(epochs, self.train_accuracy, label="Train Accuracy")
+        plt.plot(epochs, self.val_accuracy, label="Val Accuracy")
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend()
+
+        # Loss Plot
+        plt.subplot(1, 2, 2)
+        plt.plot(epochs, self.train_loss, label="Train Loss")
+        plt.plot(epochs, self.val_loss, label="Val Loss")
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
 
 # Start Flower client
 fl.client.start_client(

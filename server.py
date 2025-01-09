@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 class SaveModelStrategy(fl.server.strategy.FedAvg):
     def __init__(self):
         super().__init__()
@@ -19,12 +20,14 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
             train_losses = []
             train_accuracies = []
             
+            # Collect metrics from results
             for _, fit_res in results:
                 if fit_res.metrics:
                     metrics = fit_res.metrics
                     train_losses.append(metrics.get("loss", 0))
                     train_accuracies.append(metrics.get("accuracy", 0))
             
+            # Calculate and store average metrics
             if train_losses and train_accuracies:
                 avg_loss = np.mean(train_losses)
                 avg_accuracy = np.mean(train_accuracies)
@@ -33,6 +36,7 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
                 print(f"Round {rnd} average training loss: {avg_loss:.4f}")
                 print(f"Round {rnd} average training accuracy: {avg_accuracy:.4f}")
             
+            # Save aggregated weights
             np.savez(f"round-{rnd}-weights.npz", *aggregated_weights)
         return aggregated_weights
 
@@ -43,11 +47,13 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
         val_losses = []
         val_accuracies = []
         
+        # Collect metrics from evaluation results
         for _, eval_res in results:
             if eval_res.metrics:
                 val_losses.append(eval_res.loss)
                 val_accuracies.append(eval_res.metrics.get("accuracy", 0))
         
+        # Calculate and store average validation metrics
         if val_losses and val_accuracies:
             avg_val_loss = np.mean(val_losses)
             avg_val_accuracy = np.mean(val_accuracies)
@@ -60,6 +66,10 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
         return 0, {}
 
 def save_results_to_file(strategy):
+    if not strategy.metrics_dict['train_loss']:
+        print("No metrics to save. Training might not have completed.")
+        return
+    
     with open("final_results.txt", "w") as f:
         f.write("Federated Learning Results\n")
         f.write("==========================\n\n")
