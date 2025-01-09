@@ -31,5 +31,5 @@ client_3_data = dataset[["Age", "Physical_Activity", "Smoking_Status", "Has_Chro
 client_1_data.to_csv("client_1_data.csv", index=False)
 client_2_data.to_csv("client_2_data.csv", index=False)
 client_3_data.to_csv("client_3_data.csv", index=False)
-
+dataset.to_csv('simulated_health_data.csv', index=False)
 print("Datasets created and saved for Client 1, Client 2, and Client 3.")

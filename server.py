@@ -20,14 +20,14 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
             train_accuracies = []
             
             for _, fit_res in results:
-                if hasattr(fit_res, 'metrics') and fit_res.metrics:
+                if fit_res.metrics:
                     metrics = fit_res.metrics
-                    train_losses.append(metrics.get('loss', 0))
-                    train_accuracies.append(metrics.get('accuracy', 0))
+                    train_losses.append(metrics.get("loss", 0))
+                    train_accuracies.append(metrics.get("accuracy", 0))
             
             if train_losses and train_accuracies:
-                avg_loss = sum(train_losses) / len(train_losses)
-                avg_accuracy = sum(train_accuracies) / len(train_accuracies)
+                avg_loss = np.mean(train_losses)
+                avg_accuracy = np.mean(train_accuracies)
                 self.metrics_dict['train_loss'].append(avg_loss)
                 self.metrics_dict['train_accuracy'].append(avg_accuracy)
                 print(f"Round {rnd} average training loss: {avg_loss:.4f}")
@@ -44,13 +44,13 @@ class SaveModelStrategy(fl.server.strategy.FedAvg):
         val_accuracies = []
         
         for _, eval_res in results:
-            if hasattr(eval_res, 'metrics') and eval_res.metrics:
+            if eval_res.metrics:
                 val_losses.append(eval_res.loss)
-                val_accuracies.append(eval_res.metrics.get('accuracy', 0))
+                val_accuracies.append(eval_res.metrics.get("accuracy", 0))
         
         if val_losses and val_accuracies:
-            avg_val_loss = sum(val_losses) / len(val_losses)
-            avg_val_accuracy = sum(val_accuracies) / len(val_accuracies)
+            avg_val_loss = np.mean(val_losses)
+            avg_val_accuracy = np.mean(val_accuracies)
             self.metrics_dict['val_loss'].append(avg_val_loss)
             self.metrics_dict['val_accuracy'].append(avg_val_accuracy)
             print(f"Round {rnd} average validation loss: {avg_val_loss:.4f}")
@@ -107,8 +107,10 @@ def plot_results(strategy):
     print("Plots saved as 'training_metrics.png'.")
 
 if __name__ == "__main__":
+    # Instantiate the SaveModelStrategy
     strategy = SaveModelStrategy()
     
+    # Start the Flower server
     fl.server.start_server(
         server_address="localhost:" + str(sys.argv[1]),
         config=fl.server.ServerConfig(num_rounds=3),
@@ -116,5 +118,6 @@ if __name__ == "__main__":
         strategy=strategy
     )
     
+    # Save results to file and plot metrics
     save_results_to_file(strategy)
     plot_results(strategy)
